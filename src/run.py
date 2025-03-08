@@ -184,17 +184,26 @@ def evaluate(args, eval_dataset, model, tokenizer, use_pointer=False):
     Returns:
         decoded_preds_gold_pairs (dict): Pairs of ground-truth and dynamic slice predictions.
     '''
-    eval_dataloader = DataLoader(eval_dataset, sampler=SequentialSampler(eval_dataset),
+
+    # eval_dataloader = DataLoader(eval_dataset, sampler=SequentialSampler(eval_dataset),
+    #                              batch_size=args.eval_batch_size, drop_last=False)
+
+    first_1024_test_dp = torch.utils.data.Subset(eval_dataset, range(1024))
+    eval_dataloader = DataLoader(first_1024_test_dp, sampler=SequentialSampler(first_1024_test_dp),
                                  batch_size=args.eval_batch_size, drop_last=False)
+    
+    
     # Evaluate!
     logger.warning("***** Running evaluation *****")
-    logger.warning(f"  Num examples = {len(eval_dataset)}")
+    # logger.warning(f"  Num examples = {len(eval_dataset)}")
+    logger.warning(f"  Num examples = {len(first_1024_test_dp)}")
     logger.warning(f"  Batch size = {args.eval_batch_size}")
 
     preds_gold_pairs = []
 
     model.eval()
     for batch in tqdm(eval_dataloader):
+        print(batch.shape)
         batch = tuple(t.to(args.device) for t in batch)
         with torch.no_grad():
             batch_preds = model(batch[0])
@@ -205,6 +214,7 @@ def evaluate(args, eval_dataset, model, tokenizer, use_pointer=False):
                     t = topk_pred[topk_pred != -999]
                     if use_pointer:
                         t = batch[0][i][t]
+                    print("predicted token: ",t)
                     text_topk.append(t)
 
                 if use_pointer:
@@ -212,6 +222,7 @@ def evaluate(args, eval_dataset, model, tokenizer, use_pointer=False):
                 else:
                     item_gold = batch[1][i]
                 item_gold = item_gold[item_gold != 1]
+                print("ground truth:", item_gold)
                 preds_gold_pairs.append(
                     {'preds_topK': text_topk, 'gold': item_gold})
 
@@ -619,6 +630,15 @@ if __name__ == "__main__":
         eval_dataset = Dataset(tokenizer, args, "test", logger)
         eval_results = evaluate(args, eval_dataset, model,
                                 tokenizer, use_pointer=args.use_pointer)
+        
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(exist_ok=True, parents=True)
+
+        # Saving model predictions
+        logger.warning(f'Saving model predictions for test set.')
+        with open(str(output_dir / "test-preds.json"), 'w') as f:
+            json.dump(eval_results, f, indent=2)
+
         logger.warning(f" Number of examples = {len(eval_dataset)}")
         logger.warning(f'Printing evaluation metrics for test dataset.')
         metrics = compute_metrics(eval_results)

@@ -82,7 +82,7 @@ def build_dataset():
         for json_line in tqdm(f):
             try:
                 item_dict = json.loads(json_line)
-                code = remove_comments_and_docstrings(item_dict['code'], lang)
+                code = remove_comments_and_docstrings(item_dict['code'])
                 variable_flow = extract_variable_flow_from_pdg(code)
 
                 trace = []
