@@ -188,15 +188,15 @@ def evaluate(args, eval_dataset, model, tokenizer, use_pointer=False):
     # eval_dataloader = DataLoader(eval_dataset, sampler=SequentialSampler(eval_dataset),
     #                              batch_size=args.eval_batch_size, drop_last=False)
 
-    first_1024_test_dp = torch.utils.data.Subset(eval_dataset, range(1024))
-    eval_dataloader = DataLoader(first_1024_test_dp, sampler=SequentialSampler(first_1024_test_dp),
+    first_10_test_dp = torch.utils.data.Subset(eval_dataset, range(10))
+    eval_dataloader = DataLoader(first_10_test_dp, sampler=SequentialSampler(first_10_test_dp),
                                  batch_size=args.eval_batch_size, drop_last=False)
     
     
     # Evaluate!
     logger.warning("***** Running evaluation *****")
     # logger.warning(f"  Num examples = {len(eval_dataset)}")
-    logger.warning(f"  Num examples = {len(first_1024_test_dp)}")
+    logger.warning(f"  Num examples = {len(first_10_test_dp)}")
     logger.warning(f"  Batch size = {args.eval_batch_size}")
 
     preds_gold_pairs = []
